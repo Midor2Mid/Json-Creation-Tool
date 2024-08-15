@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>JSON Generator Tool</title>
+    <style>
+        .json-item {
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            padding: 10px;
+            position: relative;
+        }
+        .remove-btn, .segment-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background-color: #ff4d4d;
+            color: white;
+            border: none;
+            padding: 5px;
+            cursor: pointer;
+            margin-left: 5px;
+        }
+        .segment-btn {
+            background-color: #4CAF50;
+            right: 80px;
+        }
+        #jsonInputArea {
+            width: 100%;
+            height: 100px;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div id="container">
+        <form id="jsonForm">
+            <label for="groupCode">Group Code:</label>
+            <input type="text" id="groupCode" name="groupCode"><br>
+            <label for="dateRangeFrom">Date Range From:</label>
+            <input type="date" id="dateRangeFrom" name="dateRangeFrom"><br>
+            <label for="dateRangeTo">Date Range To:</label>
+            <input type="date" id="dateRangeTo" name="dateRangeTo"><br>
+            <label for="slotNames">Slot Names (comma-separated):</label>
+            <input type="text" id="slotNames" name="slotNames"><br>
+            <label for="slotIds">Slot IDs (comma-separated):</label>
+            <input type="text" id="slotIds" name="slotIds"><br>
+            <br>
+            <button type="button" id="addAnotherBtn" onclick="addAnother()">Add data to JSON</button>
+            <button type="button" onclick="reGenerateJSON()">Clear all data</button>
+            <button type="button" onclick="GetJSONData()">Get JSON Data</button>
+        </form>
+        <br>
+        <textarea id="jsonInputArea" placeholder="Paste your JSON here"></textarea>
+        <button type="button" onclick="importJSON()">Import JSON</button>
+        <div id="output"></div>
+        <div id="JSONoutput"></div>
+
+        <!-- Segment Form Modal -->
+        <div id="segmentForm" style="display:none;">
+            <h3>Segment JSON Object</h3>
+            <label for="segmentDateFrom">Segment Date Range From:</label>
+            <input type="date" id="segmentDateFrom"><br>
+            <label for="segmentDateTo">Segment Date Range To:</label>
+            <input type="date" id="segmentDateTo"><br>
+            <label for="excludeSlotNames">Exclude Slot Names (comma-separated):</label>
+            <input type="text" id="excludeSlotNames"><br>
+            <label for="excludeSlotIds">Exclude Slot Ids (comma-separated):</label>
+            <input type="text" id="excludeSlotIds"><br>
+            <button type="button" onclick="applySegment()">Apply Segment</button>
+            <button type="button" onclick="cancelSegment()">Cancel</button>
+        </div>
+    </div>
+    <script>
+        let jsonArray = [];
+        let segmentIndex = -1;
+        function formatDateToDDMMYYYY(dateString) {
+            const [year, month, day] = dateString.split('-');
+            return `${day}/${month}/${year}`;
+        }
+
+        function formatDateToYYYYMMDD(dateString) {
+            const [day, month, year] = dateString.split('/');
+            return `${year}-${month}-${day}`;
+        }
+
+        function segmentItem(index) {
+            segmentIndex = index;
+
+            // Get the selected object's date range
+            const selectedObject = jsonArray[index];
+            const startDate = formatDateToYYYYMMDD(selectedObject.dateRangeFrom);
+            const endDate = formatDateToYYYYMMDD(selectedObject.dateRangeTo);
+
+            // Pre-fill the date fields with the selected object's date range
+            const segmentDateFrom = document.getElementById('segmentDateFrom');
+            const segmentDateTo = document.getElementById('segmentDateTo');
+
+            segmentDateFrom.value = startDate;
+            segmentDateTo.value = endDate;
+
+            // Restrict the calendar to allow only dates within the object's range
+            segmentDateFrom.min = startDate;
+            segmentDateFrom.max = endDate;
+            segmentDateTo.min = startDate;
+            segmentDateTo.max = endDate;
+
+            // Show the segment form
+            document.getElementById('segmentForm').style.display = 'block';
+        }
+
+        function applySegment() {
+            const dateRangeFrom = formatDateToDDMMYYYY(document.getElementById('segmentDateFrom').value);
+            const dateRangeTo = formatDateToDDMMYYYY(document.getElementById('segmentDateTo').value);
+            const excludeSlotNames = document.getElementById('excludeSlotNames').value.split(',');
+            const excludeSlotIds = document.getElementById('excludeSlotIds').value.split(',').map(id => parseInt(id.trim(), 10));
+            console.log("slotsID", excludeSlotIds);
+            if (segmentIndex !== -1 && jsonArray[segmentIndex]) {
+                const originalObject = jsonArray[segmentIndex];
+                const originalDateFrom = formatDateToYYYYMMDD(originalObject.dateRangeFrom);
+                const originalDateTo = formatDateToYYYYMMDD(originalObject.dateRangeTo);
+
+                //Convert Date to same format for comparison
+
+                //Normal Case: Segment selected is within the range not in the edge cases
+                if ((compareDate(dateRangeFrom, originalDateFrom) == "Greater") && (compareDate(dateRangeTo, originalDateTo) == "Lesser")){
+
+                    // First segment (before the new date range)
+                    const firstSegment = {
+                        ...originalObject,
+                        dateRangeTo: formatDateToDDMMYYYY(minusDay(dateRangeFrom, 1))
+                    };
+
+                    // Middle segment (the new date range)
+                    const middleSegment = {
+                        ...originalObject,
+                        dateRangeFrom: dateRangeFrom,
+                        dateRangeTo: dateRangeTo,
+                        fulfillment: {
+                            ...originalObject.fulfillment,
+                            slotNames: originalObject.fulfillment.slotNames.filter(slot => !excludeSlotNames.includes(slot)),
+                            slotIds: originalObject.fulfillment.slotIds.filter(slot => !excludeSlotIds.includes(slot))
+                        }
+                    };
+
+                    // Last segment (after the new date range)
+                    const lastSegment = {
+                        ...originalObject,
+                        dateRangeFrom: formatDateToDDMMYYYY(minusDay(dateRangeTo, -1))
+                    };
+
+                    // Update the array
+                    jsonArray.splice(segmentIndex, 1, firstSegment, middleSegment, lastSegment);
+                } else if ((compareDate(dateRangeFrom, originalDateFrom) == "Equal") && (compareDate(dateRangeTo, originalDateTo) == "Lesser"))
+                {
+                    console.log("Case 2!");
+                    const firstSegment = {
+                        ...originalObject,
+                        dateRangeTo: formatDateToDDMMYYYY(minusDay(dateRangeFrom, -1)),
+                        fulfillment: {
+                            ...originalObject.fulfillment,
+                            slotNames: originalObject.fulfillment.slotNames.filter(slot => !excludeSlotNames.includes(slot)),
+                            slotIds: originalObject.fulfillment.slotIds.filter(slot => !excludeSlotIds.includes(slot))
+                        }
+                    };
+
+                    //Keep as current
+                    const lastSegment = {
+                        ...originalObject,
+                        dateRangeFrom: formatDateToDDMMYYYY(minusDay(dateRangeTo, -1))
+                    };
+
+                    // Update the array
+                    jsonArray.splice(segmentIndex, 1, firstSegment, lastSegment);
+                } else if ((compareDate(dateRangeFrom, originalDateFrom) == "Greater") && (compareDate(dateRangeTo, originalDateTo) == "Equal")){
+                    console.log("Case 3!");
+                    const firstSegment = {
+                        ...originalObject,
+                        dateRangeTo: dateRangeFrom
+                    };
+
+                    //Keep as current
+                    const lastSegment = {
+                        ...originalObject,
+                        dateRangeFrom: dateRangeTo,
+                        fulfillment: {
+                            ...originalObject.fulfillment,
+                            slotNames: originalObject.fulfillment.slotNames.filter(slot => !excludeSlotNames.includes(slot)),
+                            slotIds: originalObject.fulfillment.slotIds.filter(slot => !excludeSlotIds.includes(slot))
+                        }
+                    };
+
+                    // Update the array
+                    jsonArray.splice(segmentIndex, 1, firstSegment, lastSegment);
+                } else //dateRangeFrom == originalDateFrom && dateRangeTo == originalDateTo
+                {
+                    console.log("Data 1", compareDate(dateRangeFrom, originalDateFrom));
+                    console.log("Data 2", compareDate(dateRangeTo, originalDateTo));
+
+                    console.log("Case 4!", dateRangeFrom, originalDateFrom, dateRangeTo, originalDateTo);
+                    // Middle segment (the new date range)
+                    const onlySegment = {
+                        ...originalObject,
+                        dateRangeFrom: dateRangeFrom,
+                        dateRangeTo: dateRangeTo,
+                        fulfillment: {
+                            ...originalObject.fulfillment,
+                            slotNames: originalObject.fulfillment.slotNames.filter(slot => !excludeSlotNames.includes(slot)),
+                            slotIds: originalObject.fulfillment.slotIds.filter(slot => !excludeSlotIds.includes(slot))
+                        }
+                    };
+                    // Update the array
+                    jsonArray.splice(segmentIndex, 1, onlySegment);
+                }
+                
+                renderOutput(); // Update the display
+            }
+
+            cancelSegment();
+        }
+
+        function cancelSegment() {
+            document.getElementById('segmentForm').style.display = 'none';
+            segmentIndex = -1;
+        }
+
+        function removeItem(index) {
+            jsonArray.splice(index, 1);
+            renderOutput();
+        }
+
+        function renderOutput() {
+            const outputDiv = document.getElementById('output');
+            outputDiv.innerHTML = ''; // Clear previous output
+
+            jsonArray.forEach((item, index) => {
+                const jsonItemDiv = document.createElement('div');
+                jsonItemDiv.className = 'json-item';
+
+                const removeButton = document.createElement('button');
+                removeButton.className = 'remove-btn';
+                removeButton.textContent = 'Remove';
+                removeButton.onclick = () => removeItem(index);
+
+                const segmentButton = document.createElement('button');
+                segmentButton.className = 'segment-btn';
+                segmentButton.textContent = 'Segment';
+                segmentButton.onclick = () => segmentItem(index);
+
+                jsonItemDiv.textContent = JSON.stringify(item, null, 2);
+                jsonItemDiv.appendChild(removeButton);
+                jsonItemDiv.appendChild(segmentButton);
+                outputDiv.appendChild(jsonItemDiv);
+            });
+        }
+
+        //Add Another Object
+        function addAnother() {
+            const form = document.getElementById('jsonForm');
+            const groupCode = form.groupCode.value;
+            const dateRangeFrom = formatDateToDDMMYYYY(form.dateRangeFrom.value);
+            const dateRangeTo = formatDateToDDMMYYYY(form.dateRangeTo.value);
+            const slotNames = form.slotNames.value.split(',').map(String);
+            const slotIds = form.slotIds.value.trim() ? form.slotIds.value.split(',').map(value => value.trim() ? Number(value) : null) : [];
+
+            const jsonObject = {
+                groupCode,
+                dateRangeFrom,
+                dateRangeTo,
+                fulfillment: {
+                    slotNames,
+                    slotIds
+                }
+            };
+
+            jsonArray.push(jsonObject);
+            renderOutput(); // Update the display
+        }
+
+        function reGenerateJSON() {
+            jsonArray = [];
+            renderOutput(); // Update the display
+        }
+
+        function GetJSONData() {
+            document.getElementById('JSONoutput').textContent = JSON.stringify(jsonArray, null, 2);
+        }
+
+        function importJSON() {
+            const jsonInputArea = document.getElementById('jsonInputArea').value.trim();
+            if (jsonInputArea) {
+                try {
+                    const importedData = JSON.parse(jsonInputArea);
+                    if (Array.isArray(importedData)) {
+                        jsonArray = importedData; // Replace the existing array with the imported one
+                        renderOutput(); // Update the display
+                    } else {
+                        alert("Invalid JSON format. Please paste a JSON array.");
+                    }
+                } catch (error) {
+                    alert("Error parsing JSON. Please check the input.");
+                }
+            } else {
+                alert("Please paste your JSON data into the text area.");
+            }
+        }
+
+        function minusDay(inputDate, daysToMinus){
+            // Convert the input string to a Date object
+            var formatedDate = formatDateToYYYYMMDD(String(inputDate));
+            const date = new Date(formatedDate);
+
+            // Subtract one day
+            date.setDate(date.getDate() - daysToMinus);
+
+            // Format the new date back to YYYY-MM-DD
+            const minusDayResult = date.toISOString().slice(0, 10);
+            return minusDayResult;
+        }
+
+        function compareDate(firstDate, secondDate){
+            // Convert the input string to a Date object
+            var formatedFirstDate = formatDateToYYYYMMDD(String(firstDate));
+            const firstDateConverted = new Date(formatedFirstDate);
+            const secondDateConverted = new Date(secondDate);
+            var result = "";
+
+            if (firstDateConverted > secondDateConverted)
+                result = "Greater";
+            else if (firstDateConverted < secondDateConverted)
+                result = "Lesser";
+            else
+            result = "Equal";
+            return result;
+        }
+    </script>
+</body>
+</html>
