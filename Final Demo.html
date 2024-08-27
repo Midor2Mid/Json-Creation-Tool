@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <title>JSON Generator Tool</title>
@@ -10,7 +11,9 @@
             padding: 10px;
             position: relative;
         }
-        .remove-btn, .segment-btn {
+
+        .remove-btn,
+        .segment-btn {
             position: absolute;
             top: 10px;
             right: 10px;
@@ -21,59 +24,392 @@
             cursor: pointer;
             margin-left: 5px;
         }
+
         .segment-btn {
             background-color: #4CAF50;
             right: 80px;
         }
+
         #jsonInputArea {
             width: 100%;
             height: 100px;
             margin-bottom: 10px;
         }
+
+        #JSONoutput {
+            max-height: 700px;
+            overflow-y: auto;
+
+        }
+
+        .bottom-right {
+            position: fixed;
+            bottom: 1em;
+            right: 1em;
+            z-index: 9999;
+        }
+
+        input[type="date"]::-webkit-calendar-picker-indicator {
+            background: transparent;
+            bottom: 0;
+            color: transparent;
+            cursor: pointer;
+            height: auto;
+            left: 0;
+            position: absolute;
+            right: 0;
+            top: 0;
+            width: auto;
+        }
+
+        /* Calendar Style */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+
+        .calendar-container {
+            max-width: 600px;
+            margin: auto;
+        }
+
+        select,
+        table {
+            width: 100%;
+            padding: 10px;
+            margin-top: 10px;
+            margin-bottom: 20px;
+            font-size: 16px;
+        }
+
+        table {
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+
+        th,
+        td {
+            padding: 8px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        th {
+            background-color: #f4f4f4;
+        }
+
+        .tables-container {
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .tables-container table {
+            width: 48%;
+        }
+
+        /* Delete Button */
+        .rs-table-delete-slotname-btn,
+        .rs-table-delete-slotid-delete-btn {
+            color: red;
+            cursor: pointer;
+            padding: 0 5px;
+        }
+
+        .rs-table-delete-slotname-btn:hover,
+        .rs-table-delete-slotid-delete-btn:hover {
+            text-decoration: underline;
+        }
     </style>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap" rel="stylesheet" />
+    <!-- MDB -->
+    <!-- <link href="https://cdnjs.cloudflare.com/ajax/libs/mdb-ui-kit/7.3.2/mdb.min.css" rel="stylesheet" /> -->
+
+    <link rel="stylesheet" href="https://npmcdn.com/flatpickr/dist/themes/material_green.css">
+    <!-- Include lodash from CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.21/lodash.min.js"></script>
+    <!-- Include date-fns from CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/date-fns@3.6.0/cdn.min.js"></script>
 </head>
+
 <body>
-    <div id="container">
-        <form id="jsonForm">
-            <label for="groupCode">Group Code:</label>
-            <input type="text" id="groupCode" name="groupCode"><br>
-            <label for="dateRangeFrom">Date Range From:</label>
-            <input type="date" id="dateRangeFrom" name="dateRangeFrom"><br>
-            <label for="dateRangeTo">Date Range To:</label>
-            <input type="date" id="dateRangeTo" name="dateRangeTo"><br>
-            <label for="slotNames">Slot Names (comma-separated):</label>
-            <input type="text" id="slotNames" name="slotNames"><br>
-            <label for="slotIds">Slot IDs (comma-separated):</label>
-            <input type="text" id="slotIds" name="slotIds"><br>
-            <br>
-            <button type="button" id="addAnotherBtn" onclick="addAnother()">Add data to JSON</button>
-            <button type="button" onclick="reGenerateJSON()">Clear all data</button>
-            <button type="button" onclick="GetJSONData()">Get JSON Data</button>
-        </form>
-        <br>
-        <textarea id="jsonInputArea" placeholder="Paste your JSON here"></textarea>
-        <button type="button" onclick="importJSON()">Import JSON</button>
+    <div id="container" class="container mt-5">
+        <div class="row">
+            <div class="col-md-4">
+                <form id="jsonForm">
+                    <div class="mb-3">
+                        <label for="groupCode" class="form-label">Group Code:</label>
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="groupCode" name="groupCode">
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="dateRangeFrom" class="form-label">Date Range From:</label>
+                        <div class="input-group">
+                            <input type="date" class="form-control" id="dateRangeFrom" name="dateRangeFrom">
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="dateRangeTo" class="form-label">Date Range To:</label>
+                        <div class="input-group">
+                            <input type="date" class="form-control" id="dateRangeTo" name="dateRangeTo">
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="slotNames" class="form-label">Slot Names (comma-separated):</label>
+                        <div class="input-group">
+                            <input type="text" id="slotNames" class="form-control" name="slotNames">
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="slotIds" class="form-label">Slot IDs (comma-separated):</label>
+                        <div class="input-group">
+                            <input type="text" id="slotIds" class="form-control" name="slotIds">
+                        </div>
+                    </div>
+
+                    <button type="button" id="addAnotherBtn" class="btn btn-success mb-3" onclick="addAnother()">Add
+                        data to
+                        JSON</button>
+                    <button type="button" class="btn btn-primary  mb-3" onclick="GetJSONData()">Get JSON Data</button>
+                    <button type="button" class="btn btn-danger  mb-3" onclick="reGenerateJSON()">Clear all
+                        data</button>
+
+                </form>
+
+                <div class="mb-3">
+                    <textarea id="jsonInputArea" placeholder="Paste your JSON here" class="form-control"></textarea>
+                </div>
+                <button type="button" class="btn btn-warning mb-3" onclick="importJSON()">Import JSON</button>
+            </div>
+            <!-- Calendar Section-->
+            <div class="col-md-4">
+                <div class="row">
+                    <div class="caldendar-container">
+                        <h1>Result</h3>
+
+                            <!-- Group Code Selector -->
+                            <label for="groupCodeSelect">Select Group Code:</label>
+                            <select id="groupCodeSelect">
+                                <!-- Group codes will be dynamically populated here -->
+                            </select>
+
+                            <!-- Calendar Date Picker (always visible) -->
+                            <label for="datePicker">Select Date:</label>
+                            <div id="datePicker"></div>
+                    </div>
+                </div>
+
+                <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+            </div>
+            <div class="col-md-4">
+                <div class="row">
+                    <!-- Slot Details -->
+                    <div class="tables-container">
+                        <!-- Slot Names Table -->
+                        <table id="slotNamesTable">
+                            <thead>
+                                <tr>
+                                    <th>Disabled SlotNames</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Slot names will be dynamically populated here -->
+                            </tbody>
+                        </table>
+
+                        <!-- Slot IDs Table -->
+                        <table id="slotIdsTable">
+                            <thead>
+                                <tr>
+                                    <th>Disabled SlotIds</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Slot IDs will be dynamically populated here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-4">
+                <div class="row">
+                    <div class="col-1">
+                        <button class="btn btn-primary" id="buttonCopy" onclick="copyJSONOutput()">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                    </div>
+                    <div class="col-10" style="padding-left: 10px;">
+                        <pre>
+                        <div id="JSONoutput"></div>
+                    </pre>
+                    </div>
+                </div>
+            </div>
+        </div>
         <div id="output"></div>
-        <div id="JSONoutput"></div>
 
         <!-- Segment Form Modal -->
         <div id="segmentForm" style="display:none;">
             <h3>Segment JSON Object</h3>
-            <label for="segmentDateFrom">Segment Date Range From:</label>
-            <input type="date" id="segmentDateFrom"><br>
-            <label for="segmentDateTo">Segment Date Range To:</label>
-            <input type="date" id="segmentDateTo"><br>
-            <label for="excludeSlotNames">Exclude Slot Names (comma-separated):</label>
-            <input type="text" id="excludeSlotNames"><br>
-            <label for="excludeSlotIds">Exclude Slot Ids (comma-separated):</label>
-            <input type="text" id="excludeSlotIds"><br>
-            <button type="button" onclick="applySegment()">Apply Segment</button>
-            <button type="button" onclick="cancelSegment()">Cancel</button>
+
+            <div class="mb-3">
+                <label for="segmentDateFrom" class="form-label">Segment Date Range From:</label>
+                <div class="input-group">
+                    <input type="date" id="segmentDateFrom" class="form-control">
+                </div>
+            </div>
+            <div class="mb-3">
+                <label for="segmentDateTo" class="form-label">Segment Date Range To:</label>
+                <div class="input-group">
+                    <input type="date" id="segmentDateTo" class="form-control">
+                </div>
+            </div>
+            <div class="mb-3">
+                <label for="excludeSlotNames" class="form-label">Exclude Slot Names (comma-separated):</label>
+                <div class="input-group">
+                    <input type="text" id="excludeSlotNames" class="form-control">
+                </div>
+            </div>
+            <div class="mb-3">
+                <label for="excludeSlotIds" class="form-label">Exclude Slot Ids (comma-separated):</label>
+                <div class="input-group">
+                    <input type="text" id="excludeSlotIds" class="form-control">
+                </div>
+            </div>
+
+            <button type="button" class="btn btn-primary mb-3" onclick="applySegment()">Apply Segment</button>
+            <button type="button" class="btn btn-secondary mb-3" onclick="cancelSegment()">Cancel</button>
         </div>
     </div>
+
+    <div id="toastCopy"
+        class="toast justify-content-center align-items-center text-white bg-primary border-0 bottom-right" role="alert"
+        aria-live="assertive" aria-atomic="true">
+        <div class="d-flex">
+            <div class="toast-body">
+                Text has copy
+            </div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"
+                aria-label="Close"></button>
+        </div>
+    </div>
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js" crossorigin="anonymous"></script>
+
+
     <script>
+        $(document).ready(function () {
+            var toastEl = document.getElementById('toastCopy');
+            var toast = new bootstrap.Toast(toastEl);
+
+            var btn = document.getElementById('buttonCopy');
+            $('#buttonCopy').on('click', function () {
+                toast.show();
+            });
+
+            $("#buttonCopy").hide();
+        });
+    </script>
+    <script>
+        //TEST Section
+        function combineJSON(data) {
+    // Sort the data by dateRangeFrom
+    data.sort((a, b) => new Date(a.dateRangeFrom.split('/').reverse().join('-')) - new Date(b.dateRangeFrom.split('/').reverse().join('-')));
+
+    let result = [];
+    let currentItem = null;
+
+    for (let item of data) {
+        if (!currentItem) {
+            currentItem = {...item};
+            continue;
+        }
+
+        let currentEndDate = new Date(currentItem.dateRangeTo.split('/').reverse().join('-'));
+        let itemStartDate = new Date(item.dateRangeFrom.split('/').reverse().join('-'));
+        let itemEndDate = new Date(item.dateRangeTo.split('/').reverse().join('-'));
+
+        if (itemStartDate <= currentEndDate) {
+            // Merge the fulfillment data
+            currentItem.fulfillment.slotNames = [...new Set([...currentItem.fulfillment.slotNames, ...item.fulfillment.slotNames])];
+            currentItem.fulfillment.slotIds = [...new Set([...currentItem.fulfillment.slotIds, ...item.fulfillment.slotIds])];
+
+            // Update the date range if necessary
+            if (itemEndDate > currentEndDate) {
+                currentItem.dateRangeTo = item.dateRangeTo;
+            }
+        } else {
+            // Push the current item to the result and start a new one
+            result.push(currentItem);
+            currentItem = {...item};
+        }
+    }
+
+    // Don't forget to push the last item
+    if (currentItem) {
+        result.push(currentItem);
+    }
+
+    return result;
+}
+
+// Example usage:
+const inputData = [
+    {
+        "groupCode": "A",
+        "fulfillment": {
+            "slotNames": ["1:00", "2:00"],
+            "slotIds": [1, 2]
+        },
+        "dateRangeFrom": "01/08/2024",
+        "dateRangeTo": "15/08/2024"
+    },
+    {
+        "groupCode": "A",
+        "fulfillment": {
+            "slotNames": ["1:00", "2:00", "3:00"],
+            "slotIds": [1, 2]
+        },
+        "dateRangeFrom": "01/08/2024",
+        "dateRangeTo": "30/08/2024"
+    },
+    {
+        "groupCode": "A",
+        "fulfillment": {
+            "slotNames": ["4:00"],
+            "slotIds": [4]
+        },
+        "dateRangeFrom": "01/08/2024",
+        "dateRangeTo": "30/09/2024"
+    }
+];
+
+console.log(JSON.stringify(combineJSON(inputData), null, 2));
+
+        //END TEST
+
+        //Start Variables
         let jsonArray = [];
         let segmentIndex = -1;
+        let segmentIndexFromCalendarResult = -1;
+        let currentJsonData = [];
+        //End Variables
+
+        //Start General Functions
         function formatDateToDDMMYYYY(dateString) {
             const [year, month, day] = dateString.split('-');
             return `${day}/${month}/${year}`;
@@ -84,47 +420,166 @@
             return `${year}-${month}-${day}`;
         }
 
-        function segmentItem(index) {
-            segmentIndex = index;
+        function formatDateObjectToDDMMYYYY(dateObject) {
+            let year = dateObject.getFullYear();
+            let month = String(dateObject.getMonth() + 1).padStart(2, '0'); // Months are 0-indexed
+            let day = String(dateObject.getDate()).padStart(2, '0');
 
-            // Get the selected object's date range
-            const selectedObject = jsonArray[index];
-            const startDate = formatDateToYYYYMMDD(selectedObject.dateRangeFrom);
-            const endDate = formatDateToYYYYMMDD(selectedObject.dateRangeTo);
-
-            // Pre-fill the date fields with the selected object's date range
-            const segmentDateFrom = document.getElementById('segmentDateFrom');
-            const segmentDateTo = document.getElementById('segmentDateTo');
-
-            segmentDateFrom.value = startDate;
-            segmentDateTo.value = endDate;
-
-            // Restrict the calendar to allow only dates within the object's range
-            segmentDateFrom.min = startDate;
-            segmentDateFrom.max = endDate;
-            segmentDateTo.min = startDate;
-            segmentDateTo.max = endDate;
-
-            // Show the segment form
-            document.getElementById('segmentForm').style.display = 'block';
+            let formattedDate = `${day}/${month}/${year}`;
+            return formattedDate;
         }
 
-        function applySegment() {
-            const dateRangeFrom = formatDateToDDMMYYYY(document.getElementById('segmentDateFrom').value);
-            const dateRangeTo = formatDateToDDMMYYYY(document.getElementById('segmentDateTo').value);
-            const excludeSlotNames = document.getElementById('excludeSlotNames').value.split(',');
-            const excludeSlotIds = document.getElementById('excludeSlotIds').value.split(',').map(id => parseInt(id.trim(), 10));
-            console.log("slotsID", excludeSlotIds);
-            if (segmentIndex !== -1 && jsonArray[segmentIndex]) {
-                const originalObject = jsonArray[segmentIndex];
+        // Helper function to parse date from DD/MM/YYYY format
+        function parseDate(dateStr) {
+            const [day, month, year] = dateStr.split('/');
+            return new Date(year, month - 1, day);
+        }
+
+        function copyJSONOutput() {
+            var textarea = document.createElement('textarea');
+
+            var text = document.getElementById('JSONoutput').textContent;
+
+            textarea.value = text;
+
+            document.body.appendChild(textarea);
+
+            textarea.select();
+
+            document.execCommand('copy');
+
+            document.body.removeChild(textarea);
+        }
+
+        function minusDay(inputDate, daysToMinus) {
+            // Convert the input string to a Date object
+            var formatedDate = formatDateToYYYYMMDD(String(inputDate));
+            const date = new Date(formatedDate);
+
+            // Subtract one day
+            date.setDate(date.getDate() - daysToMinus);
+
+            // Format the new date back to YYYY-MM-DD
+            const minusDayResult = date.toISOString().slice(0, 10);
+            return minusDayResult;
+        }
+        //End General Functions
+
+        //Optimize & Organize JSON data
+        function optimizeJSONData(inputJSON) {
+            const { parse, isAfter, addDays, format } = dateFns;
+
+            //Remove empty slot Range (No Fulfillment SlotNames and SlotIds)
+            let filteredArray = inputJSON.filter(item =>
+                item.fulfillment.slotNames.length > 0 || item.fulfillment.slotIds.length > 0
+            );
+
+            // Remove Duplicated SlotNames & Duplicated SlotIds
+            filteredArray = filteredArray.map(item => ({
+                ...item,
+                fulfillment: {
+                    slotNames: [...new Set(item.fulfillment.slotNames)].sort((a, b) => {
+            const convertToMinutes = time => {
+                const [hours, minutes] = time.split(':').map(Number);
+                return hours * 60 + minutes;
+            };
+
+            return convertToMinutes(a) - convertToMinutes(b);
+        }),
+                    slotIds: [...new Set(item.fulfillment.slotIds)].sort((a, b) => a - b)
+                }
+            }));
+
+            //Combine JSON
+            console.log("Removed Empty: ", filteredArray);
+            // Convert date strings to Date objects
+            const processedData = filteredArray.map(item => ({
+                ...item,
+                dateRangeFrom: parse(item.dateRangeFrom, 'dd/MM/yyyy', new Date()),
+                dateRangeTo: parse(item.dateRangeTo, 'dd/MM/yyyy', new Date())
+            }));
+
+            // Group by 'groupCode' and 'fulfillment'
+            const grouped = _.groupBy(processedData, item => `${item.groupCode}-${JSON.stringify(item.fulfillment)}`);
+
+            const result = _.flatMap(grouped, (group) => {
+                const sortedGroup = _.sortBy(group, ['dateRangeFrom']);
+
+                // Create a shifted start date array
+                const shiftedStartDate = sortedGroup.map((d, i) => i === 0 ? null : addDays(sortedGroup[i - 1].dateRangeTo, 1));
+
+                // Calculate condition for merging intervals
+                const condition = sortedGroup.map((d, i) => i === 0 ? true : isAfter(d.dateRangeFrom, shiftedStartDate[i]) === false);
+
+                // Calculate cumulative sum (group ID)
+                const cumsum = condition.reduce((acc, val) => {
+                    acc.push((acc[acc.length - 1] || 0) + (val ? 0 : 1));
+                    return acc;
+                }, []);
+
+                // Add 'group' to the sortedGroup
+                const groupedByCumsum = _.groupBy(sortedGroup.map((d, i) => ({ ...d, group: cumsum[i] })), 'group');
+
+                // Aggregate start_date and end_date
+                return _.map(groupedByCumsum, (items) => ({
+                    groupCode: items[0].groupCode,
+                    fulfillment: items[0].fulfillment,
+                    dateRangeFrom: format(_.minBy(items, 'dateRangeFrom').dateRangeFrom, 'dd/MM/yyyy'),
+                    dateRangeTo: format(_.maxBy(items, 'dateRangeTo').dateRangeTo, 'dd/MM/yyyy')
+                }));
+            });
+            console.log("Optimized Result: ", result);
+            return result;
+        }
+
+        function removeAnItemFromDay(type, index, slotToRemove) {
+            const groupCode = groupCodeSelect.value;
+            const selectedDate = fp.selectedDates[0];
+            //Find the selectedDate is under which object in JSON Data
+            const selectedIndex = currentJsonData.findIndex(item =>
+                item.groupCode === groupCode &&
+                selectedDate >= parseDate(item.dateRangeFrom) &&
+                selectedDate <= parseDate(item.dateRangeTo)
+            );
+            const selectedRange = currentJsonData[selectedIndex];
+            segmentIndexFromCalendarResult = selectedIndex;
+            if (type == "rs-table-slotNames") {
+                console.log("Remove slot name from a day: ", index);
+                applySegmentWithInputData(selectedDate, selectedDate, slotToRemove, "", segmentIndexFromCalendarResult)
+            }
+            else if (type == "rs-table-slotIds") {
+                console.log("Remove slot id from a day: ", index);
+                applySegmentWithInputData(selectedDate, selectedDate, "", slotToRemove, segmentIndexFromCalendarResult)
+            }
+            else // Do nothing
+            {
+            }
+            renderOutput();
+        }
+
+        function applySegmentWithInputData(itemDateRangeFrom, itemDateRangeTo, excludeSlotNames, excludeSlotIds, segmentIndex) {
+            console.log("dateRangeFrom", itemDateRangeFrom);
+            console.log("dateRangeTo", itemDateRangeTo);
+            console.log("excludeSlotNames", excludeSlotNames);
+            console.log("excludeSlotIds", excludeSlotIds);
+            console.log("segmentIndex", segmentIndex);
+            //Format Input:
+            var dateRangeFrom = formatDateObjectToDDMMYYYY(itemDateRangeFrom);
+            var dateRangeTo = formatDateObjectToDDMMYYYY(itemDateRangeTo);
+            if (segmentIndex !== -1 && currentJsonData[segmentIndex]) {
+                const originalObject = currentJsonData[segmentIndex];
                 const originalDateFrom = formatDateToYYYYMMDD(originalObject.dateRangeFrom);
                 const originalDateTo = formatDateToYYYYMMDD(originalObject.dateRangeTo);
+                console.log("Case X! ", originalDateFrom);
+                console.log("Case Y! ", originalDateTo);
+                console.log("Case XX! ", dateRangeFrom);
+                console.log("Case YY! ", dateRangeTo);
 
                 //Convert Date to same format for comparison
 
                 //Normal Case: Segment selected is within the range not in the edge cases
-                if ((compareDate(dateRangeFrom, originalDateFrom) == "Greater") && (compareDate(dateRangeTo, originalDateTo) == "Lesser")){
-
+                if ((compareDate(dateRangeFrom, originalDateFrom) == "Greater") && (compareDate(dateRangeTo, originalDateTo) == "Lesser")) {
+                    console.log("Case 1!");
                     // First segment (before the new date range)
                     const firstSegment = {
                         ...originalObject,
@@ -150,13 +605,13 @@
                     };
 
                     // Update the array
-                    jsonArray.splice(segmentIndex, 1, firstSegment, middleSegment, lastSegment);
-                } else if ((compareDate(dateRangeFrom, originalDateFrom) == "Equal") && (compareDate(dateRangeTo, originalDateTo) == "Lesser"))
-                {
+                    currentJsonData.splice(segmentIndex, 1, firstSegment, middleSegment, lastSegment);
+                    currentJsonData = optimizeJSONData(currentJsonData);
+                } else if ((compareDate(dateRangeFrom, originalDateFrom) == "Equal") && (compareDate(dateRangeTo, originalDateTo) == "Lesser")) {
                     console.log("Case 2!");
                     const firstSegment = {
                         ...originalObject,
-                        dateRangeTo: formatDateToDDMMYYYY(minusDay(dateRangeFrom, -1)),
+                        dateRangeTo: dateRangeFrom,
                         fulfillment: {
                             ...originalObject.fulfillment,
                             slotNames: originalObject.fulfillment.slotNames.filter(slot => !excludeSlotNames.includes(slot)),
@@ -171,12 +626,13 @@
                     };
 
                     // Update the array
-                    jsonArray.splice(segmentIndex, 1, firstSegment, lastSegment);
-                } else if ((compareDate(dateRangeFrom, originalDateFrom) == "Greater") && (compareDate(dateRangeTo, originalDateTo) == "Equal")){
+                    currentJsonData.splice(segmentIndex, 1, firstSegment, lastSegment);
+                    currentJsonData = optimizeJSONData(currentJsonData);
+                } else if ((compareDate(dateRangeFrom, originalDateFrom) == "Greater") && (compareDate(dateRangeTo, originalDateTo) == "Equal")) {
                     console.log("Case 3!");
                     const firstSegment = {
                         ...originalObject,
-                        dateRangeTo: dateRangeFrom
+                        dateRangeTo: formatDateToDDMMYYYY(minusDay(dateRangeTo, 1))
                     };
 
                     //Keep as current
@@ -191,9 +647,11 @@
                     };
 
                     // Update the array
-                    jsonArray.splice(segmentIndex, 1, firstSegment, lastSegment);
+                    currentJsonData.splice(segmentIndex, 1, firstSegment, lastSegment);
+                    currentJsonData = optimizeJSONData(currentJsonData);
                 } else //dateRangeFrom == originalDateFrom && dateRangeTo == originalDateTo
                 {
+                    console.log("Compare Data 1", dateRangeFrom, originalDateFrom);
                     console.log("Data 1", compareDate(dateRangeFrom, originalDateFrom));
                     console.log("Data 2", compareDate(dateRangeTo, originalDateTo));
 
@@ -210,22 +668,23 @@
                         }
                     };
                     // Update the array
-                    jsonArray.splice(segmentIndex, 1, onlySegment);
+                    currentJsonData.splice(segmentIndex, 1, onlySegment);
+                    currentJsonData = optimizeJSONData(currentJsonData);
                 }
-                
+
                 renderOutput(); // Update the display
             }
 
-            cancelSegment();
+            //Trigger rerender calendar with current selected date
+            console.log("Rerender Calendar!");
+            previousSelectedDate = itemDateRangeFrom;
+            selectedGroupCode = groupCodeSelect.value;
+            updateUI(previousSelectedDate, selectedGroupCode);
         }
 
-        function cancelSegment() {
-            document.getElementById('segmentForm').style.display = 'none';
-            segmentIndex = -1;
-        }
-
-        function removeItem(index) {
-            jsonArray.splice(index, 1);
+        function removeSegmentItem(index) {
+            console.log("Remove segment item: ", index);
+            currentJsonData.splice(index, 1);
             renderOutput();
         }
 
@@ -233,23 +692,25 @@
             const outputDiv = document.getElementById('output');
             outputDiv.innerHTML = ''; // Clear previous output
 
-            jsonArray.forEach((item, index) => {
+            currentJsonData.forEach((item, index) => {
                 const jsonItemDiv = document.createElement('div');
-                jsonItemDiv.className = 'json-item';
+                jsonItemDiv.className = 'json-item row align-items-center';
+
+                const divText = document.createElement('div');
+                const btnList = document.createElement('div');
+                divText.className = "col-9";
+                btnList.className = "col-3";
+                divText.textContent = JSON.stringify(item, null, 2);
 
                 const removeButton = document.createElement('button');
-                removeButton.className = 'remove-btn';
+                removeButton.className = "btn btn-danger";
                 removeButton.textContent = 'Remove';
-                removeButton.onclick = () => removeItem(index);
+                removeButton.onclick = () => removeSegmentItem(index);
 
-                const segmentButton = document.createElement('button');
-                segmentButton.className = 'segment-btn';
-                segmentButton.textContent = 'Segment';
-                segmentButton.onclick = () => segmentItem(index);
+                jsonItemDiv.appendChild(divText);
+                jsonItemDiv.appendChild(btnList);
 
-                jsonItemDiv.textContent = JSON.stringify(item, null, 2);
-                jsonItemDiv.appendChild(removeButton);
-                jsonItemDiv.appendChild(segmentButton);
+                btnList.appendChild(removeButton);
                 outputDiv.appendChild(jsonItemDiv);
             });
         }
@@ -273,17 +734,42 @@
                 }
             };
 
-            jsonArray.push(jsonObject);
+            currentJsonData.push(jsonObject);
+
+            //Start: Update calendar result
+            updateData(currentJsonData);
+            currentJsonData = optimizeJSONData(currentJsonData);
+            //End: Update calendar result
+
             renderOutput(); // Update the display
         }
 
         function reGenerateJSON() {
             jsonArray = [];
             renderOutput(); // Update the display
+
+            document.getElementById('JSONoutput').textContent = '';
+            $("#buttonCopy").hide();
+
+            //Start: Update calendar result
+            currentJsonData = jsonArray;
+            updateData(currentJsonData);
+            //End: Update calendar result
         }
 
         function GetJSONData() {
-            document.getElementById('JSONoutput').textContent = JSON.stringify(jsonArray, null, 2);
+            let currentJsonObjectString = JSON.stringify(currentJsonData);
+            let jsonObject = JSON.parse(currentJsonObjectString);
+            let formattedJson = JSON.stringify(jsonObject, null, 2);
+
+            document.getElementById('JSONoutput').textContent = formattedJson;
+
+            //Start: Update calendar result
+            currentJsonData = jsonObject;
+            updateData(currentJsonData);
+            //End: Update calendar result
+
+            $("#buttonCopy").show();
         }
 
         function importJSON() {
@@ -303,22 +789,16 @@
             } else {
                 alert("Please paste your JSON data into the text area.");
             }
+
+            //Start: Optimize JSON:
+            currentJsonData = optimizeJSONData(jsonArray);
+            console.log("Data Optimized", currentJsonData);
+            //Start: Update calendar result
+            updateData(currentJsonData);
+            //End: Update calendar result
         }
 
-        function minusDay(inputDate, daysToMinus){
-            // Convert the input string to a Date object
-            var formatedDate = formatDateToYYYYMMDD(String(inputDate));
-            const date = new Date(formatedDate);
-
-            // Subtract one day
-            date.setDate(date.getDate() - daysToMinus);
-
-            // Format the new date back to YYYY-MM-DD
-            const minusDayResult = date.toISOString().slice(0, 10);
-            return minusDayResult;
-        }
-
-        function compareDate(firstDate, secondDate){
+        function compareDate(firstDate, secondDate) {
             // Convert the input string to a Date object
             var formatedFirstDate = formatDateToYYYYMMDD(String(firstDate));
             const firstDateConverted = new Date(formatedFirstDate);
@@ -330,9 +810,163 @@
             else if (firstDateConverted < secondDateConverted)
                 result = "Lesser";
             else
-            result = "Equal";
+                result = "Equal";
             return result;
         }
+        //Re-render Calendar when select GroupCode
+        function reRenderCalendar() {
+            updateUI();
+        }
+
+        <!-- Calendar Script-->
+        const groupCodeSelect = document.getElementById('groupCodeSelect');
+        const datePicker = document.getElementById('datePicker');
+        const slotNamesTable = document.getElementById('slotNamesTable').getElementsByTagName('tbody')[0];
+        const slotIdsTable = document.getElementById('slotIdsTable').getElementsByTagName('tbody')[0];
+
+        // Initialize Flatpickr with inline mode and highlight today
+        const fp = flatpickr(datePicker, {
+            inline: true,  // Always visible
+            onChange: function (selectedDates) {
+                if (selectedDates.length > 0) {
+                    showSlots(groupCodeSelect.value, selectedDates[0]);
+                }
+            },
+            disable: [],
+            onDayCreate: function (dObj, dStr, fp, dayElem) {
+                // Add a circle around today's date
+                if (dayElem.dateObj.toDateString() === new Date().toDateString()) {
+                    dayElem.style.border = '1px solid red';
+                    dayElem.style.borderRadius = '50%';
+                }
+            }
+        });
+
+        // Event listener for group code selection
+        groupCodeSelect.addEventListener('change', function () {
+            const selectedGroupCode = groupCodeSelect.value;
+            console.log(`Selected Group Code: ${selectedGroupCode}`);
+            updateUI(null, selectedGroupCode);
+        });
+
+        // Update calendar and slot details based on current data
+        function updateUI(previousSelectedDate, groupCodeSelected = null) {
+            populateGroupCodeSelect(groupCodeSelected);
+            const selectedGroupCode = groupCodeSelect.value;
+            console.log("Current Group Code: ", selectedGroupCode);
+            updateCalendar(selectedGroupCode, previousSelectedDate);
+            showSlots(selectedGroupCode, previousSelectedDate)
+        }
+
+        // Populate group code dropdown
+        function populateGroupCodeSelect(groupCodeSelected = null) {
+            groupCodeSelect.innerHTML = ''; // Clear existing options
+            const groupCodes = [...new Set(currentJsonData.map(item => item.groupCode))];
+            groupCodes.forEach(code => {
+                const option = document.createElement('option');
+                option.value = code;
+                option.textContent = code;
+                groupCodeSelect.appendChild(option);
+            });
+
+            if (groupCodes.length > 0 && groupCodeSelected == null) {
+                groupCodeSelect.value = groupCodes[0];
+                updateCalendar(groupCodes[0]);
+            } else {
+                groupCodeSelect.value = groupCodeSelected;
+                updateCalendar(groupCodeSelected);
+            }
+        }
+
+        // Update calendar based on selected group code
+        function updateCalendar(selectedGroupCode, previousSelectedDate = null) {
+            slotNamesTable.innerHTML = ''; // Clear slot names
+            slotIdsTable.innerHTML = ''; // Clear slot IDs
+
+            const availableDateRanges = currentJsonData
+                .filter(item => item.groupCode === selectedGroupCode)
+                .map(item => ({
+                    from: parseDate(item.dateRangeFrom),
+                    to: parseDate(item.dateRangeTo),
+                }));
+
+            const enabledDates = [];
+            availableDateRanges.forEach(range => {
+                let date = new Date(range.from);
+                while (date <= range.to) {
+                    enabledDates.push(new Date(date));
+                    date.setDate(date.getDate() + 1);
+                }
+            });
+
+            fp.setDate(previousSelectedDate); // Clear the current date selection
+            fp.set('disable', [(date) => !enabledDates.some(d => d.getTime() === date.getTime())]);
+        }
+
+        // Show slot details for selected date
+        function showSlots(groupCode, selectedDate) {
+            console.log("ShowSlots: ", groupCode, selectedDate)
+            slotNamesTable.innerHTML = '';
+            slotIdsTable.innerHTML = '';
+
+            const selectedRange = currentJsonData.find(item =>
+                item.groupCode === groupCode &&
+                selectedDate >= parseDate(item.dateRangeFrom) &&
+                selectedDate <= parseDate(item.dateRangeTo)
+            );
+
+            if (selectedRange) {
+                selectedRange.fulfillment.slotNames.forEach((slot, index) => {
+                    const row = document.createElement('tr');
+                    const cell = document.createElement('td');
+                    cell.textContent = slot;
+                    row.appendChild(cell);
+                    const deleteBtn = document.createElement('td');
+                    deleteBtn.innerHTML = '<span class="rs-table-delete-slotname-btn" data-type="rs-table-slotNames" data-index="' + index + '">X</span>';
+                    row.appendChild(deleteBtn);
+                    slotNamesTable.appendChild(row);
+                });
+
+                selectedRange.fulfillment.slotIds.forEach((id, index) => {
+                    const row = document.createElement('tr');
+                    const cell = document.createElement('td');
+                    cell.textContent = id || 'N/A';
+                    row.appendChild(cell);
+                    const deleteBtn = document.createElement('td');
+                    deleteBtn.innerHTML = '<span class="rs-table-delete-slotid-delete-btn" data-type="rs-table-slotIds" data-index="' + index + '">X</span>';
+                    row.appendChild(deleteBtn);
+                    slotIdsTable.appendChild(row);
+                });
+            }
+
+            // Add event listeners to delete buttons
+            document.querySelectorAll('.rs-table-delete-slotname-btn,.rs-table-delete-slotid-delete-btn').forEach(button => {
+                button.addEventListener('click', function () {
+                    const type = this.getAttribute('data-type');
+                    const index = parseInt(this.getAttribute('data-index'));
+                    const slotToRemove = this.parentElement.previousElementSibling.textContent.trim();
+                    console.log("Data to Remove", slotToRemove);
+                    removeAnItemFromDay(type, index, slotToRemove);
+                });
+            });
+        }
+
+        // Update data and refresh UI
+        function updateData(newData) {
+            renderOutput();
+            updateUI(); // Refresh the UI
+        }
+
+        // Initialize with current data
+        updateUI();
     </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
+        crossorigin="anonymous"></script>
+    <!-- MDB
+    <script type="text/javascript"
+        src="https://cdnjs.cloudflare.com/ajax/libs/mdb-ui-kit/7.3.2/mdb.umd.min.js"></script> -->
 </body>
+
 </html>
